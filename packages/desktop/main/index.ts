@@ -98,7 +98,7 @@ function createWindow() {
     backgroundColor: "#0a0a0a",
     show: false, // Show when ready
     webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
+      preload: join(__dirname, "../../preload/dist/index.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -113,7 +113,11 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/dist/index.html"));
+    // In production, __dirname is inside app.asar/main/dist/
+    // Renderer is at app.asar/renderer/dist/index.html
+    const rendererPath = join(__dirname, "../../renderer/dist/index.html");
+    console.log("[main] Loading renderer:", rendererPath);
+    mainWindow.loadFile(rendererPath);
   }
 
   // Show when ready
