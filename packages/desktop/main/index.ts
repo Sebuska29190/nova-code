@@ -153,13 +153,6 @@ ipcMain.handle("app:info", () => ({
 
 ipcMain.handle("app:isFirstRun", () => isFirstRun());
 
-ipcMain.handle("dialog:openDirectory", async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ["openDirectory"],
-  });
-  return result.canceled ? null : result.filePaths[0];
-});
-
 // Update handlers
 ipcMain.handle("update:check", async () => {
   if (!autoUpdater) return { available: false };
