@@ -3,7 +3,14 @@ import { join } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { homedir } from "os";
 import { EngineBridge } from "./engine-bridge";
-import { autoUpdater } from "electron-updater";
+
+// Auto-updater loaded dynamically to avoid module not found errors
+let autoUpdater: any = null;
+try {
+  autoUpdater = require("electron-updater").autoUpdater;
+} catch {
+  // electron-updater not available — auto-update disabled
+}
 
 // Detect development mode
 const isDev = !app.isPackaged;
@@ -34,6 +41,11 @@ function ensureDirectories(): void {
 // ─── Auto Updater ────────────────────────────────────────────────────────────
 
 function setupAutoUpdater(): void {
+  if (!autoUpdater) {
+    console.log("[updater] electron-updater not available, skipping auto-update setup");
+    return;
+  }
+
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
@@ -41,7 +53,7 @@ function setupAutoUpdater(): void {
     console.log("[updater] Checking for updates...");
   });
 
-  autoUpdater.on("update-available", (info) => {
+  autoUpdater.on("update-available", (info: any) => {
     console.log(`[updater] Update available: ${info.version}`);
     mainWindow?.webContents.send("update:available", info);
   });
@@ -50,7 +62,7 @@ function setupAutoUpdater(): void {
     console.log("[updater] Already up to date");
   });
 
-  autoUpdater.on("download-progress", (progress) => {
+  autoUpdater.on("download-progress", (progress: any) => {
     mainWindow?.webContents.send("update:progress", progress.percent);
   });
 
@@ -59,7 +71,7 @@ function setupAutoUpdater(): void {
     mainWindow?.webContents.send("update:ready");
   });
 
-  autoUpdater.on("error", (err) => {
+  autoUpdater.on("error", (err: any) => {
     console.error("[updater] Error:", err.message);
   });
 
@@ -150,6 +162,7 @@ ipcMain.handle("dialog:openDirectory", async () => {
 
 // Update handlers
 ipcMain.handle("update:check", async () => {
+  if (!autoUpdater) return { available: false };
   try {
     const result = await autoUpdater.checkForUpdates();
     return { available: !!result?.updateInfo };
@@ -159,6 +172,7 @@ ipcMain.handle("update:check", async () => {
 });
 
 ipcMain.handle("update:download", async () => {
+  if (!autoUpdater) return { success: false, error: "Auto-updater not available" };
   try {
     await autoUpdater.downloadUpdate();
     return { success: true };
@@ -168,7 +182,9 @@ ipcMain.handle("update:download", async () => {
 });
 
 ipcMain.handle("update:install", () => {
-  autoUpdater.quitAndInstall(false, true);
+  if (autoUpdater) {
+    autoUpdater.quitAndInstall(false, true);
+  }
 });
 
 // ─── App Lifecycle ───────────────────────────────────────────────────────────
