@@ -2,7 +2,9 @@
   "name": "@nova/desktop",
   "version": "0.1.0",
   "private": true,
-  "main": "./main/index.js",
+  "description": "NovaCode - AI Coding Assistant Desktop App",
+  "author": "NovaCode",
+  "main": "./main/dist/index.js",
   "scripts": {
     "dev": "bun run build:main && concurrently -k \"vite --config renderer/vite.config.ts\" \"electron .\"",
     "dev:vite": "vite --config renderer/vite.config.ts",
@@ -10,6 +12,11 @@
     "build:main": "tsc -p main/tsconfig.json",
     "build:renderer": "vite build renderer",
     "build": "bun run build:main && bun run build:renderer",
+    "build:win": "bun run build && electron-builder --win --publish never",
+    "build:mac": "bun run build && electron-builder --mac --publish never",
+    "build:linux": "bun run build && electron-builder --linux --publish never",
+    "build:all": "bun run build && electron-builder --win --mac --linux --publish never",
+    "release": "bun run build && electron-builder --win --publish always",
     "typecheck": "tsc --noEmit -p main/tsconfig.json && tsc --noEmit -p renderer/tsconfig.json"
   },
   "dependencies": {

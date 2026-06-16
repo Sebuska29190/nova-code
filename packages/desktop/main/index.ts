@@ -1,12 +1,79 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, dialog } from "electron";
 import { join } from "path";
+import { existsSync, mkdirSync } from "fs";
+import { homedir } from "os";
 import { EngineBridge } from "./engine-bridge";
+import { autoUpdater } from "electron-updater";
 
 // Detect development mode
 const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 const engineBridge = new EngineBridge();
+
+// ─── First Run Setup ─────────────────────────────────────────────────────────
+
+function isFirstRun(): boolean {
+  const configDir = join(homedir(), ".nova");
+  return !existsSync(configDir);
+}
+
+function ensureDirectories(): void {
+  const dirs = [
+    join(homedir(), ".nova"),
+    join(homedir(), ".nova", "skills"),
+    join(homedir(), ".nova", "plugins"),
+    join(homedir(), ".nova", "memory"),
+    join(homedir(), ".nova", "logs"),
+  ];
+  for (const dir of dirs) {
+    mkdirSync(dir, { recursive: true });
+  }
+}
+
+// ─── Auto Updater ────────────────────────────────────────────────────────────
+
+function setupAutoUpdater(): void {
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on("checking-for-update", () => {
+    console.log("[updater] Checking for updates...");
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    console.log(`[updater] Update available: ${info.version}`);
+    mainWindow?.webContents.send("update:available", info);
+  });
+
+  autoUpdater.on("update-not-available", () => {
+    console.log("[updater] Already up to date");
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    mainWindow?.webContents.send("update:progress", progress.percent);
+  });
+
+  autoUpdater.on("update-downloaded", () => {
+    console.log("[updater] Update downloaded, ready to install");
+    mainWindow?.webContents.send("update:ready");
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.error("[updater] Error:", err.message);
+  });
+
+  // Check for updates 30s after startup, then every 4 hours
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 30_000);
+
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 4 * 60 * 60 * 1000);
+}
+
+// ─── Window ──────────────────────────────────────────────────────────────────
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -17,6 +84,7 @@ function createWindow() {
     frame: false,
     titleBarStyle: "hidden",
     backgroundColor: "#0a0a0a",
+    show: false, // Show when ready
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,
@@ -36,6 +104,11 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, "../renderer/dist/index.html"));
   }
 
+  // Show when ready
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
+
   // Open external links in browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
@@ -47,7 +120,8 @@ function createWindow() {
   });
 }
 
-// Register window control IPC handlers
+// ─── IPC Handlers ────────────────────────────────────────────────────────────
+
 ipcMain.handle("window:minimize", () => mainWindow?.minimize());
 ipcMain.handle("window:maximize", () => {
   if (mainWindow?.isMaximized()) {
@@ -58,19 +132,64 @@ ipcMain.handle("window:maximize", () => {
 });
 ipcMain.handle("window:close", () => mainWindow?.close());
 
-// Register app info IPC handler
 ipcMain.handle("app:info", () => ({
   version: app.getVersion(),
   platform: process.platform,
   arch: process.arch,
+  isDev,
 }));
 
-// Register engine IPC handlers
-engineBridge.register();
+ipcMain.handle("app:isFirstRun", () => isFirstRun());
+
+ipcMain.handle("dialog:openDirectory", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
+
+// Update handlers
+ipcMain.handle("update:check", async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { available: !!result?.updateInfo };
+  } catch {
+    return { available: false };
+  }
+});
+
+ipcMain.handle("update:download", async () => {
+  try {
+    await autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+});
+
+ipcMain.handle("update:install", () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+
+// ─── App Lifecycle ───────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  createWindow();
+  // Ensure config directories exist
+  ensureDirectories();
+
+  // Register engine IPC handlers
+  engineBridge.register();
+
+  // Initialize engine
   await engineBridge.initialize();
+
+  // Create window
+  createWindow();
+
+  // Setup auto-updater (production only)
+  if (!isDev) {
+    setupAutoUpdater();
+  }
 });
 
 app.on("window-all-closed", () => {

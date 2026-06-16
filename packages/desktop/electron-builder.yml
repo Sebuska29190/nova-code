@@ -1,57 +1,64 @@
 appId: com.novacode.app
 productName: NovaCode
 copyright: Copyright © 2026 NovaCode
+forceCodeSigning: false
+publish:
+  provider: github
+  owner: Sebuska29190
+  repo: nova-code
 
 directories:
   output: release
   buildResources: resources
 
+# Files to include in the app
 files:
-  - main/**/*
+  - main/dist/**/*
   - preload/**/*
   - renderer/dist/**/*
   - "!node_modules/**/*"
-  - "node_modules/{better-sqlite3,node-pty,ssh2}/**/*"
+  - "node_modules/{nanoid,electron-updater}/**/*"
 
-extraResources:
-  - from: "../engine/dist"
-    to: "engine"
-  - from: "../../tools"
-    to: "tools"
+# ─── Windows ──────────────────────────────────────────────────────────────────
 
 win:
   target:
     - target: nsis
-      arch: [x64]
-  icon: resources/icon.ico
+      arch:
+        - x64
   artifactName: "NovaCode-Setup-${version}.${ext}"
+  signAndEditExecutable: false
 
 nsis:
   oneClick: false
+  perMachine: false
   allowToChangeInstallationDirectory: true
+  allowElevation: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: NovaCode
-  installerIcon: resources/icon.ico
-  uninstallerIcon: resources/icon.ico
-  installerHeaderIcon: resources/icon.ico
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+
+# ─── macOS ────────────────────────────────────────────────────────────────────
 
 mac:
   target:
     - target: dmg
-      arch: [x64, arm64]
-  icon: resources/icon.icns
+      arch:
+        - x64
+        - arm64
   category: public.app-category.developer-tools
+
+# ─── Linux ────────────────────────────────────────────────────────────────────
 
 linux:
   target:
     - target: AppImage
-      arch: [x64]
-  icon: resources/icon.png
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
   category: Development
   artifactName: "NovaCode-${version}.${ext}"
-
-publish:
-  provider: github
-  owner: nova-code
-  repo: nova-code

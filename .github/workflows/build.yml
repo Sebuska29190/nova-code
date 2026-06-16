@@ -1,4 +1,4 @@
-name: Build & Release NovaCode
+name: Build & Release
 
 on:
   push:
@@ -15,13 +15,10 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            artifact: NovaCode-linux.AppImage
           - os: windows-latest
-            platform: win32
-            artifact: NovaCode-Setup.exe
+            platform: win
           - os: macos-latest
-            platform: darwin
-            artifact: NovaCode-mac.dmg
+            platform: mac
 
     steps:
       - name: Checkout
@@ -36,6 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'bun'
 
       - name: Install dependencies
         run: bun install
@@ -47,24 +45,25 @@ jobs:
         run: bun run --filter @nova/engine build
 
       - name: Build desktop
-        run: bun run --filter @nova/desktop build
-
-      - name: Package with electron-builder
         working-directory: packages/desktop
-        run: |
-          bunx electron-builder --${{ matrix.platform }} --publish never
+        run: bun run build
+
+      - name: Build Electron app (${{ matrix.platform }})
+        working-directory: packages/desktop
+        run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
+          name: NovaCode-${{ matrix.platform }}
           path: |
-            packages/desktop/release/${{ matrix.artifact }}
             packages/desktop/release/*.exe
-            packages/desktop/release/*.AppImage
             packages/desktop/release/*.dmg
+            packages/desktop/release/*.AppImage
+            packages/desktop/release/*.deb
+          if-no-files-found: warn
 
   release:
     needs: build
@@ -78,15 +77,42 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: List downloaded files
+        run: find . -type f -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" | head -20
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             **/*.exe
-            **/*.AppImage
             **/*.dmg
+            **/*.AppImage
+            **/*.deb
           generate_release_notes: true
           draft: false
           prerelease: false
+          body: |
+            ## NovaCode v${{ github.ref_name }}
+
+            ### Download & Install
+
+            **Windows:**
+            1. Download `NovaCode-Setup-*.exe`
+            2. Run the installer
+            3. NovaCode will start automatically
+
+            **macOS:**
+            1. Download `NovaCode-*.dmg`
+            2. Open and drag to Applications
+
+            **Linux:**
+            1. Download `NovaCode-*.AppImage`
+            2. `chmod +x NovaCode-*.AppImage && ./NovaCode-*.AppImage`
+
+            ### Auto-Update
+            NovaCode checks for updates automatically. You can also check manually in Settings.
+
+            ### First Run
+            On first launch, you'll be asked to configure an LLM provider (API key).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
