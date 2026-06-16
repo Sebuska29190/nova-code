@@ -23,10 +23,12 @@ export class PluginRegistry extends PluginLoader {
   private states = new Map<string, PluginState>();
   private mcpServers = new Map<string, McpServerProcess>();
   private statePath: string;
+  private installPath: string;
 
   constructor(pluginPaths: string[], statePath?: string) {
     super(pluginPaths);
-    this.statePath = statePath ?? join(pluginPaths[0] ?? ".nova", "plugin-states.json");
+    this.installPath = pluginPaths[0] ?? ".nova/plugins";
+    this.statePath = statePath ?? join(this.installPath, "plugin-states.json");
   }
 
   async init(): Promise<void> {
@@ -36,7 +38,7 @@ export class PluginRegistry extends PluginLoader {
 
   async install(url: string): Promise<Plugin> {
     const repoInfo = this.parseGitHubUrl(url);
-    const pluginPath = join(this.pluginPaths[0], repoInfo.name);
+    const pluginPath = join(this.installPath, repoInfo.name);
 
     if (existsSync(pluginPath)) {
       throw new Error(`Plugin ${repoInfo.name} already installed`);
@@ -60,7 +62,6 @@ export class PluginRegistry extends PluginLoader {
 
     const plugin = this.get(manifest.name);
     if (!plugin) throw new Error("Failed to load installed plugin");
-
     return plugin;
   }
 
@@ -78,7 +79,6 @@ export class PluginRegistry extends PluginLoader {
   async enable(name: string): Promise<void> {
     const state = this.states.get(name);
     if (!state) throw new Error(`Plugin ${name} not found`);
-
     state.enabled = true;
     await this.saveStates();
   }
@@ -86,7 +86,6 @@ export class PluginRegistry extends PluginLoader {
   async disable(name: string): Promise<void> {
     const state = this.states.get(name);
     if (!state) throw new Error(`Plugin ${name} not found`);
-
     state.enabled = false;
     await this.stopServer(name);
     await this.saveStates();
@@ -112,10 +111,7 @@ export class PluginRegistry extends PluginLoader {
 
     for (const [serverName, config] of Object.entries(serverConfigs)) {
       const fullKey = `${name}:${serverName}`;
-
-      if (this.mcpServers.has(fullKey)) {
-        continue;
-      }
+      if (this.mcpServers.has(fullKey)) continue;
 
       const child = spawn(config.command, config.args, {
         cwd: config.cwd ?? plugin.basePath,
@@ -130,15 +126,8 @@ export class PluginRegistry extends PluginLoader {
         status: "running",
       };
 
-      child.on("error", () => {
-        serverProcess.status = "error";
-      });
-
-      child.on("exit", () => {
-        serverProcess.status = "stopped";
-        this.mcpServers.delete(fullKey);
-      });
-
+      child.on("error", () => { serverProcess.status = "error"; });
+      child.on("exit", () => { serverProcess.status = "stopped"; this.mcpServers.delete(fullKey); });
       this.mcpServers.set(fullKey, serverProcess);
     }
   }
@@ -166,11 +155,7 @@ export class PluginRegistry extends PluginLoader {
       `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+nova-plugin&per_page=10`,
       { headers: { Accept: "application/vnd.github.v3+json" } }
     );
-
-    if (!response.ok) {
-      throw new Error("GitHub search failed");
-    }
-
+    if (!response.ok) throw new Error("GitHub search failed");
     const data = await response.json();
     return data.items.map((item: { name: string; html_url: string; description: string }) => ({
       name: item.name,
@@ -187,15 +172,8 @@ export class PluginRegistry extends PluginLoader {
 
   private async cloneRepo(url: string, targetPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const child = spawn("git", ["clone", "--depth", "1", url, targetPath], {
-        stdio: "pipe",
-      });
-
-      child.on("close", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`Git clone failed with code ${code}`));
-      });
-
+      const child = spawn("git", ["clone", "--depth", "1", url, targetPath], { stdio: "pipe" });
+      child.on("close", (code) => { if (code === 0) resolve(); else reject(new Error(`Git clone failed: ${code}`)); });
       child.on("error", reject);
     });
   }
@@ -204,13 +182,9 @@ export class PluginRegistry extends PluginLoader {
     try {
       if (existsSync(this.statePath)) {
         const data = JSON.parse(await readFile(this.statePath, "utf-8")) as PluginState[];
-        for (const state of data) {
-          this.states.set(state.name, state);
-        }
+        for (const state of data) this.states.set(state.name, state);
       }
-    } catch {
-      // No states file yet
-    }
+    } catch { /* No states file */ }
   }
 
   private async saveStates(): Promise<void> {
