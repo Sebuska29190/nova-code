@@ -16,8 +16,17 @@ files:
   - main/dist/**/*
   - preload/**/*
   - renderer/dist/**/*
-  - "!node_modules/**/*"
-  - "node_modules/{nanoid,electron-updater}/**/*"
+  - package.json
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,README,readme,LICENSE,license,LICENCE,licence}"
+  - "!**/node_modules/*/{test,tests,powered-test,example,examples}"
+  - "!**/node_modules/*.d.ts"
+  - "!**/node_modules/.bin"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+  - "!**/._*"
+  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}"
+  - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
 
 # ─── Windows ──────────────────────────────────────────────────────────────────
 
