@@ -8,7 +8,7 @@ import type { Plugin, PluginManifest, Hook } from "@nova/shared";
  */
 export class PluginLoader {
   private plugins = new Map<string, Plugin>();
-  private pluginPaths: string[];
+  protected pluginPaths: string[];
 
   constructor(pluginPaths: string[]) {
     this.pluginPaths = pluginPaths;

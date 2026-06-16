@@ -4,6 +4,7 @@ import { ChatPanel } from "./components/ChatPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SkillPanel } from "./components/SkillPanel";
 import { PluginPanel } from "./components/PluginPanel";
+import { TelegramPanel } from "./components/TelegramPanel";
 import { AgentTree } from "./components/AgentTree";
 import { useAppStore } from "./stores/app";
 
@@ -28,6 +29,7 @@ export default function App() {
             {activeView === "settings" && <SettingsPanel />}
             {activeView === "skills" && <SkillPanel />}
             {activeView === "plugins" && <PluginPanel />}
+            {activeView === "telegram" && <TelegramPanel />}
           </div>
 
           {/* Agent tree sidebar (always visible when agents exist) */}

@@ -50,9 +50,7 @@ export function SkillPanel() {
           await window.nova.engine.loadSkill(name);
           setLoadedSkills((prev) => new Set(prev).add(name));
         }
-      } catch {
-        // ignore
-      }
+      } catch {}
     },
     []
   );
@@ -68,9 +66,7 @@ export function SkillPanel() {
             return next;
           });
         }
-      } catch {
-        // ignore
-      }
+      } catch {}
     },
     []
   );

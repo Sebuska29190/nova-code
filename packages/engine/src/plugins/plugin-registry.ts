@@ -1,4 +1,4 @@
-import { resolve, join } from "path";
+import { join } from "path";
 import { rm, mkdir, writeFile, readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { spawn, type ChildProcess } from "child_process";
@@ -75,21 +75,21 @@ export class PluginRegistry extends PluginLoader {
     await this.loadAll();
   }
 
-  enable(name: string): void {
+  async enable(name: string): Promise<void> {
     const state = this.states.get(name);
     if (!state) throw new Error(`Plugin ${name} not found`);
 
     state.enabled = true;
-    this.saveStates();
+    await this.saveStates();
   }
 
-  disable(name: string): void {
+  async disable(name: string): Promise<void> {
     const state = this.states.get(name);
     if (!state) throw new Error(`Plugin ${name} not found`);
 
     state.enabled = false;
-    this.stopServer(name);
-    this.saveStates();
+    await this.stopServer(name);
+    await this.saveStates();
   }
 
   isEnabled(name: string): boolean {

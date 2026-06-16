@@ -15,8 +15,10 @@
   "dependencies": {
     "@nova/engine": "workspace:*",
     "@nova/shared": "workspace:*",
+    "@types/node-telegram-bot-api": "^0.64.15",
     "@types/prismjs": "^1.26.6",
     "electron-updater": "6.6.2",
+    "node-telegram-bot-api": "^1.1.0",
     "prismjs": "^1.30.0",
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
