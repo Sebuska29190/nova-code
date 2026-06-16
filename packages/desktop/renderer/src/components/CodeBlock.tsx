@@ -82,8 +82,6 @@ export function CodeBlock({ code, language, filename }: CodeBlockProps) {
     }
   }, [trimmedCode]);
 
-  const highlighted = highlightCode(trimmedCode, resolvedLang);
-
   return (
     <div className="group relative rounded-lg overflow-hidden bg-[#0d1117] border border-neutral-800 my-3">
       {(filename || resolvedLang !== "plaintext") && (

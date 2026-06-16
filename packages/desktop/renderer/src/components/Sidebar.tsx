@@ -4,6 +4,7 @@ const navItems = [
   { id: "chat" as const, icon: "💬", label: "Chat" },
   { id: "skills" as const, icon: "⚡", label: "Skills" },
   { id: "plugins" as const, icon: "🔌", label: "Plugins" },
+  { id: "telegram" as const, icon: "📱", label: "Telegram" },
   { id: "settings" as const, icon: "⚙️", label: "Settings" },
 ];
 

@@ -19,9 +19,11 @@
   "dependencies": {
     "@nova/shared": "workspace:*",
     "glob": "11.0.2",
-    "nanoid": "5.1.5"
+    "nanoid": "5.1.5",
+    "node-telegram-bot-api": "^0.66.0"
   },
   "devDependencies": {
+    "@types/node-telegram-bot-api": "^0.64.7",
     "typescript": "5.8.3"
   }
 }

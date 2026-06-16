@@ -3,11 +3,11 @@ import { create } from "zustand";
 interface AppState {
   sidebarOpen: boolean;
   theme: "dark" | "light" | "system";
-  activeView: "chat" | "settings" | "plugins" | "skills";
+  activeView: "chat" | "settings" | "plugins" | "skills" | "telegram";
 
   toggleSidebar: () => void;
   setTheme: (theme: "dark" | "light" | "system") => void;
-  setActiveView: (view: "chat" | "settings" | "plugins" | "skills") => void;
+  setActiveView: (view: "chat" | "settings" | "plugins" | "skills" | "telegram") => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({

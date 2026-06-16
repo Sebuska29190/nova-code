@@ -1,15 +1,12 @@
 import { nanoid } from "nanoid";
-import { randomUUID } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
   AgentTask,
   AgentSpawnOptions,
-  AgentStatus,
   AgentIsolation,
   AgentResult,
-  TokenUsage,
   LLMProvider,
 } from "@nova/shared";
 import { TaskQueue, type QueueTask } from "./task-queue.js";
@@ -56,7 +53,7 @@ export class AgentSpawner {
 
   async spawn(
     prompt: string,
-    options: AgentSpawnOptions = {},
+    options: AgentSpawnOptions & { workingDirectory?: string } = {},
   ): Promise<SpawnedAgent> {
     const id = nanoid();
     const label = options.label ?? `agent-${id.slice(0, 8)}`;
@@ -73,6 +70,7 @@ export class AgentSpawner {
 
     const task: AgentTask = {
       id,
+      parentId: options.parentId,
       label,
       status: "pending",
       prompt,
@@ -109,7 +107,7 @@ export class AgentSpawner {
       label,
       prompt,
       priority: 0,
-      execute: () => agent.sendMessage(prompt).then(r => r.output),
+      execute: () => agent.sendMessage(prompt).then(r => r.result),
     };
 
     this.taskQueue.enqueue(queueTask);
@@ -163,12 +161,20 @@ export class AgentSpawner {
     },
   ): Promise<AgentResult> {
     const agent = this.agents.get(agentId);
+    const startTime = Date.now();
+
     if (!agent) {
-      return { taskId: agentId, output: "", error: "Agent not found" };
+      return {
+        agentId,
+        result: "",
+        tokenUsage: { input: 0, output: 0 },
+        duration: 0,
+        error: "Agent not found",
+      };
     }
 
     agent.task.status = "running";
-    agent.task.startTime = Date.now();
+    agent.task.startTime = startTime;
 
     try {
       const messages = [
@@ -188,10 +194,6 @@ export class AgentSpawner {
       });
 
       let output = "";
-      const tokenUsage: TokenUsage = {
-        inputTokens: 0,
-        outputTokens: 0,
-      };
 
       for await (const chunk of stream) {
         if (chunk.type === "text") {
@@ -205,12 +207,18 @@ export class AgentSpawner {
         }
       }
 
+      const tokenUsage = { input: 0, output: 0 };
       agent.task.result = output;
       agent.task.status = "completed";
       agent.task.endTime = Date.now();
       agent.task.tokenUsage = tokenUsage;
 
-      return { taskId: agentId, output, tokenUsage };
+      return {
+        agentId,
+        result: output,
+        tokenUsage,
+        duration: Date.now() - startTime,
+      };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -219,7 +227,13 @@ export class AgentSpawner {
       agent.task.endTime = Date.now();
       agent.task.result = errorMessage;
 
-      return { taskId: agentId, output: "", error: errorMessage };
+      return {
+        agentId,
+        result: "",
+        tokenUsage: { input: 0, output: 0 },
+        duration: Date.now() - startTime,
+        error: errorMessage,
+      };
     }
   }
 }

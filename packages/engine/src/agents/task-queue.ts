@@ -1,4 +1,3 @@
-import { nanoid } from "nanoid";
 import type { AgentTask, AgentStatus } from "@nova/shared";
 
 export interface QueueTask {
@@ -83,6 +82,7 @@ export class TaskQueue {
     const allTasks = [
       ...this.queue.map(q => ({
         id: q.id,
+        parentId: q.parentId,
         label: q.label,
         status: "pending" as AgentStatus,
         prompt: q.prompt,

@@ -2,6 +2,8 @@ import { TitleBar } from "./components/TitleBar";
 import { Sidebar } from "./components/Sidebar";
 import { ChatPanel } from "./components/ChatPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SkillPanel } from "./components/SkillPanel";
+import { PluginPanel } from "./components/PluginPanel";
 import { AgentTree } from "./components/AgentTree";
 import { useAppStore } from "./stores/app";
 
@@ -24,39 +26,13 @@ export default function App() {
           <div className="flex-1 flex flex-col overflow-hidden">
             {activeView === "chat" && <ChatPanel />}
             {activeView === "settings" && <SettingsPanel />}
-            {activeView === "skills" && <SkillsPanel />}
-            {activeView === "plugins" && <PluginsPanel />}
+            {activeView === "skills" && <SkillPanel />}
+            {activeView === "plugins" && <PluginPanel />}
           </div>
 
           {/* Agent tree sidebar (always visible when agents exist) */}
           <AgentTreeSidebar />
         </div>
-      </div>
-    </div>
-  );
-}
-
-/** Skills panel placeholder */
-function SkillsPanel() {
-  return (
-    <div className="flex-1 flex items-center justify-center bg-neutral-950">
-      <div className="text-center">
-        <div className="text-4xl mb-4">⚡</div>
-        <h2 className="text-xl font-semibold text-neutral-200 mb-2">Skills</h2>
-        <p className="text-sm text-neutral-400">Skill management coming soon</p>
-      </div>
-    </div>
-  );
-}
-
-/** Plugins panel placeholder */
-function PluginsPanel() {
-  return (
-    <div className="flex-1 flex items-center justify-center bg-neutral-950">
-      <div className="text-center">
-        <div className="text-4xl mb-4">🔌</div>
-        <h2 className="text-xl font-semibold text-neutral-200 mb-2">Plugins</h2>
-        <p className="text-sm text-neutral-400">Plugin marketplace coming soon</p>
       </div>
     </div>
   );

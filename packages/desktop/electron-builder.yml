@@ -1,0 +1,57 @@
+appId: com.novacode.app
+productName: NovaCode
+copyright: Copyright © 2026 NovaCode
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - main/**/*
+  - preload/**/*
+  - renderer/dist/**/*
+  - "!node_modules/**/*"
+  - "node_modules/{better-sqlite3,node-pty,ssh2}/**/*"
+
+extraResources:
+  - from: "../engine/dist"
+    to: "engine"
+  - from: "../../tools"
+    to: "tools"
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+  artifactName: "NovaCode-Setup-${version}.${ext}"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: NovaCode
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  icon: resources/icon.png
+  category: Development
+  artifactName: "NovaCode-${version}.${ext}"
+
+publish:
+  provider: github
+  owner: nova-code
+  repo: nova-code
