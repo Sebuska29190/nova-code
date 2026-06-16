@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-nova-50: #eef2ff;
+  --color-nova-100: #e0e7ff;
+  --color-nova-200: #c7d2fe;
+  --color-nova-300: #a5b4fc;
+  --color-nova-400: #818cf8;
+  --color-nova-500: #6366f1;
+  --color-nova-600: #4f46e5;
+  --color-nova-700: #4338ca;
+  --color-nova-800: #3730a3;
+  --color-nova-900: #312e81;
+  --color-nova-950: #1e1b4b;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Drag region for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Smooth animations */
+* {
+  transition-property: background-color, border-color, color, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease-in-out;
+}
